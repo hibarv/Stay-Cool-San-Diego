@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stay Cool San Diego</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --mint:      #e8f4cf;
+    --mint-dark: #c8e09a;
+    --baltic:    #4f6798;
+    --baltic-dark: #3a4f73;
+    --maya:      #88bee8;
+    --sky:       #7cceef;
+    --white:     #ffffff;
+    --sand:      #f7f5f0;
+    --text:      #1a2233;
+    --text-2:    #4a5568;
+    --text-3:    #8a96a8;
+    --border:    #dde4ee;
+    --closed:    #c0392b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--sand); color: var(--text); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: var(--baltic);
+    color: var(--white);
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px;
+    flex-shrink: 0;
+    z-index: 1000;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .topbar-logo {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--sky); display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+  }
+  .topbar-title { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
+  .topbar-sub { font-size: 11px; opacity: .75; margin-top: 1px; }
+  .topbar-right { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .top-pill {
+    background: rgba(255,255,255,.15); padding: 3px 10px;
+    border-radius: 20px; font-size: 11px; white-space: nowrap;
+  }
+  .top-pill.live { background: rgba(232,244,207,.25); color: var(--mint); }
+
+  /* ── WAVE ── */
+  .wave { height: 3px; background: linear-gradient(90deg, var(--mint) 0%, var(--sky) 40%, var(--maya) 70%, var(--baltic) 100%); flex-shrink: 0; }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: flex; background: var(--white);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .stat { flex: 1; padding: 7px 8px; text-align: center; border-right: 1px solid var(--border); }
+  .stat:last-child { border-right: none; }
+  .stat-n { font-size: 16px; font-weight: 600; }
+  .stat-l { font-size: 9px; color: var(--text-3); text-transform: uppercase; letter-spacing: .5px; margin-top: 1px; }
+
+  /* ── MAIN BODY ── */
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 300px; min-width: 300px; display: flex; flex-direction: column;
+    background: var(--white); border-right: 1px solid var(--border);
+    overflow: hidden; z-index: 500;
+  }
+  .search-wrap { padding: 10px; position: relative; border-bottom: 1px solid var(--border); }
+  .search-wrap svg { position: absolute; left: 19px; top: 50%; transform: translateY(-50%); color: var(--text-3); }
+  #search-input {
+    width: 100%; border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px 8px 32px; font-size: 13px; font-family: inherit;
+    background: var(--sand); color: var(--text); outline: none;
+    transition: border-color .15s;
+  }
+  #search-input:focus { border-color: var(--baltic); }
+
+  .filters { display: flex; gap: 5px; padding: 8px 10px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .chip {
+    font-size: 11px; padding: 4px 10px; border-radius: 20px;
+    border: 1px solid var(--border); cursor: pointer;
+    color: var(--text-2); background: var(--white); white-space: nowrap;
+    transition: all .15s; font-family: inherit;
+  }
+  .chip:hover { border-color: var(--baltic); color: var(--baltic); }
+  .chip.active { background: var(--baltic); color: var(--white); border-color: var(--baltic); }
+
+  .list-header {
+    padding: 6px 12px; font-size: 10px; color: var(--text-3);
+    font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+    border-bottom: 1px solid var(--border); background: var(--sand);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .results-list { overflow-y: auto; flex: 1; }
+
+  .item {
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    cursor: pointer; display: flex; gap: 10px; align-items: flex-start;
+    transition: background .1s;
+  }
+  .item:hover { background: var(--sand); }
+  .item.selected { background: #eef4fb; border-left: 3px solid var(--baltic); }
+  .item-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+  }
+  .ic-lib { background: var(--mint); }
+  .ic-rec { background: #d4ecf7; }
+  .ic-cls { background: #fde8e8; }
+  .item-body { flex: 1; min-width: 0; }
+  .item-name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-meta { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+  .badge {
+    font-size: 10px; padding: 1px 7px; border-radius: 10px;
+    display: inline-block; margin-top: 3px; font-weight: 500;
+  }
+  .b-lib { background: var(--mint); color: #2d4a1a; }
+  .b-rec { background: #d4ecf7; color: #1a3d5c; }
+  .b-cls { background: #fde8e8; color: #7a0000; }
+
+  .empty-state {
+    padding: 32px 16px; text-align: center; color: var(--text-3);
+    font-size: 13px; display: none;
+  }
+
+  /* ── MAP ── */
+  #map { position: absolute; inset: 0; z-index: 1; }
+
+  /* ── LEAFLET POPUP CUSTOM ── */
+  .leaflet-popup-content-wrapper {
+    border-radius: 12px !important; padding: 0 !important;
+    overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.15) !important;
+    border: none !important;
+  }
+  .leaflet-popup-content { margin: 0 !important; width: 220px !important; }
+  .leaflet-popup-tip-container { display: none; }
+  .leaflet-popup-close-button { color: rgba(255,255,255,.8) !important; top: 8px !important; right: 10px !important; font-size: 16px !important; }
+
+  .popup-hdr { padding: 12px 14px; display: flex; gap: 10px; align-items: center; }
+  .popup-hdr-lib  { background: linear-gradient(135deg, var(--baltic-dark), var(--baltic)); }
+  .popup-hdr-rec  { background: linear-gradient(135deg, #1a7a9a, var(--sky)); }
+  .popup-hdr-cls  { background: linear-gradient(135deg, #7a1f1f, #c0392b); }
+  .popup-icon { width: 34px; height: 34px; border-radius: 8px; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+  .popup-title { font-size: 12px; font-weight: 600; color: #fff; line-height: 1.3; }
+  .popup-subtitle { font-size: 10px; color: rgba(255,255,255,.85); margin-top: 1px; }
+
+  .popup-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .popup-row { display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: var(--text-2); }
+  .popup-row svg { flex-shrink: 0; margin-top: 1px; color: var(--text-3); }
+  .popup-hours-box { background: var(--sand); border-radius: 6px; padding: 6px 8px; font-size: 11px; color: var(--text-2); }
+  .popup-hours-title { font-weight: 600; color: var(--text); font-size: 11px; margin-bottom: 4px; }
+  .popup-hours-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+  .popup-hours-row:last-child { margin-bottom: 0; }
+  .closed-banner { background: #fde8e8; border: 1px solid #f0a0a0; color: #7a0000; border-radius: 6px; padding: 6px 8px; font-size: 11px; }
+
+  .popup-actions { display: flex; gap: 6px; padding: 0 12px 10px; }
+  .popup-btn-primary {
+    flex: 1; background: var(--baltic); color: #fff; border: none;
+    border-radius: 7px; padding: 6px 0; font-size: 11px; font-family: inherit;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;
+    font-weight: 500;
+  }
+  .popup-btn-primary:hover { background: var(--baltic-dark); }
+  .popup-btn-sec {
+    background: var(--sand); border: 1px solid var(--border); border-radius: 7px;
+    padding: 6px 10px; font-size: 11px; cursor: pointer; color: var(--text-2); font-family: inherit;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .popup-btn-sec:hover { background: var(--border); }
+
+  /* ── LAYER CONTROL ── */
+  .layer-control {
+    position: absolute; top: 10px; right: 10px; z-index: 800;
+    background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; width: 172px; box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  }
+  .layer-control-title { font-size: 10px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .layer-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; font-size: 12px; color: var(--text); }
+  .layer-label { display: flex; align-items: center; gap: 6px; }
+  .layer-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .layer-line { width: 18px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+  .layer-dash { width: 18px; height: 2px; border-top: 2px dashed var(--baltic); flex-shrink: 0; }
+  .toggle { width: 28px; height: 16px; border-radius: 8px; cursor: pointer; position: relative; flex-shrink: 0; border: none; transition: background .2s; }
+  .toggle.on { background: var(--baltic); }
+  .toggle.off { background: var(--border); }
+  .toggle-thumb { position: absolute; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; transition: left .15s; pointer-events: none; }
+  .toggle.on .toggle-thumb { left: 14px; }
+  .toggle.off .toggle-thumb { left: 2px; }
+
+  /* ── MAP CONTROLS ── */
+  .map-controls {
+    position: absolute; bottom: 24px; right: 10px; z-index: 800;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .map-btn {
+    width: 32px; height: 32px; background: var(--white); border: 1px solid var(--border);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.08); color: var(--text-2);
+    font-size: 16px; font-family: inherit;
+  }
+  .map-btn:hover { background: var(--sand); }
+
+  /* ── LEGEND ── */
+  .legend {
+    position: absolute; bottom: 24px; left: 10px; z-index: 800;
+    background: var(--white); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 11px; color: var(--text-2);
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  .legend-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .legend-row:last-child { margin-bottom: 0; }
+  .legend-divider { border: none; border-top: 1px solid var(--border); margin: 5px 0; }
+
+  /* ── CUSTOM PIN MARKERS ── */
+  .marker-pin {
+    width: 32px; height: 32px; border-radius: 50%; border: 2.5px solid #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  }
+  .marker-lib  { background: var(--baltic); }
+  .marker-rec  { background: #1a7a9a; }
+  .marker-cls  { background: #888; opacity: .85; }
+
+  /* ── MOBILE ── */
+  .mobile-toggle {
+    display: none; position: absolute; bottom: 70px; left: 50%;
+    transform: translateX(-50%); z-index: 900;
+    background: var(--baltic); color: #fff; border: none; border-radius: 20px;
+    padding: 8px 18px; font-size: 12px; font-family: inherit; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,.2); font-weight: 500;
+    display: none; align-items: center; gap: 6px;
+  }
+
+  @media (max-width: 680px) {
+    .main { flex-direction: column-reverse; }
+    .sidebar {
+      width: 100%; min-width: unset; height: 50%;
+      border-right: none; border-top: 1px solid var(--border);
+    }
+    #map { position: absolute; inset: 0; }
+    .layer-control { top: 8px; right: 8px; width: 150px; }
+    .topbar-right { display: none; }
+    .stats-bar { display: none; }
+    .mobile-toggle { display: flex; }
+  }
+
+  /* ── LOADING OVERLAY ── */
+  .loading {
+    position: absolute; inset: 0; background: rgba(247,245,240,.85);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 2000; gap: 12px; font-size: 13px; color: var(--text-2);
+  }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--border);
+    border-top-color: var(--baltic); border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">❄️</div>
+    <div>
+      <div class="topbar-title">Stay Cool San Diego</div>
+      <div class="topbar-sub">Free cooling centers across the city</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="top-pill live" id="count-pill">Loading...</span>
+    <span class="top-pill" id="date-pill"></span>
+  </div>
+</div>
+<div class="wave"></div>
+
+<div class="stats-bar">
+  <div class="stat"><div class="stat-n" id="stat-lib" style="color:var(--baltic)">—</div><div class="stat-l">Libraries</div></div>
+  <div class="stat"><div class="stat-n" id="stat-rec" style="color:#1a7a9a">—</div><div class="stat-l">Rec Centers</div></div>
+  <div class="stat"><div class="stat-n" id="stat-cls" style="color:#c0392b">—</div><div class="stat-l">Closed</div></div>
+  <div class="stat"><div class="stat-n" id="stat-total" style="color:var(--text)">—</div><div class="stat-l">Total</div></div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search-input" type="text" placeholder="Search by name or neighborhood..." aria-label="Search cooling centers">
+    </div>
+    <div class="filters">
+      <button class="chip active" data-filter="all">All</button>
+      <button class="chip" data-filter="Library">Libraries</button>
+      <button class="chip" data-filter="Recreation Center">Rec Centers</button>
+      <button class="chip" data-filter="open">Open now</button>
+    </div>
+    <div class="list-header">
+      <span id="list-count">Loading...</span>
+      <span style="color:var(--text-3);font-size:9px">Click a location to zoom</span>
+    </div>
+    <div class="results-list" id="results-list">
+      <div class="empty-state" id="empty-state" style="display:none">No cooling centers match your search.</div>
+    </div>
+  </div>
+
+  <div style="flex:1;position:relative;overflow:hidden;">
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <span>Loading cooling centers...</span>
+    </div>
+    <div id="map"></div>
+
+    <!-- Layer control -->
+    <div class="layer-control">
+      <div class="layer-control-title">Map layers</div>
+      <div class="layer-row">
+        <span class="layer-label"><span class="layer-dot" style="background:var(--baltic)"></span>Cooling centers</span>
+        <button class="toggle on" id="tog-centers" aria-label="Toggle cooling centers"><span class="toggle-thumb"></span></button>
+      </div>
+      <div class="layer-row">
+        <span class="layer-label"><span class="layer-dash"></span>Neighborhoods</span>
+        <button class="toggle on" id="tog-neighborhoods" aria-label="Toggle neighborhoods"><span class="toggle-thumb"></span></button>
+      </div>
+      <div class="layer-row">
+        <span class="layer-label"><span class="layer-line" style="background:#aaa"></span>Bus routes</span>
+        <button class="toggle on" id="tog-bus" aria-label="Toggle bus routes"><span class="toggle-thumb"></span></button>
+      </div>
+      <div class="layer-row">
+        <span class="layer-label"><span class="layer-line" style="background:#00A6CE"></span>Trolley</span>
+        <button class="toggle on" id="tog-trolley" aria-label="Toggle trolley"><span class="toggle-thumb"></span></button>
+      </div>
+      <div class="layer-row">
+        <span class="layer-label"><span class="layer-dot" style="background:#aaa;width:7px;height:7px"></span>Bus stops</span>
+        <button class="toggle off" id="tog-stops" aria-label="Toggle bus stops"><span class="toggle-thumb"></span></button>
+      </div>
+    </div>
+
+    <!-- Zoom controls -->
+    <div class="map-controls">
+      <button class="map-btn" id="btn-zoom-in" aria-label="Zoom in">+</button>
+      <button class="map-btn" id="btn-zoom-out" aria-label="Zoom out">−</button>
+      <button class="map-btn" id="btn-home" aria-label="Reset view" title="Reset view">⌂</button>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-row"><span class="layer-dot" style="background:var(--baltic)"></span>Library</div>
+      <div class="legend-row"><span class="layer-dot" style="background:#1a7a9a"></span>Rec Center</div>
+      <div class="legend-row"><span class="layer-dot" style="background:#888"></span>Closed</div>
+      <hr class="legend-divider">
+      <div class="legend-row"><span class="layer-line" style="background:#00A6CE"></span>Trolley</div>
+      <div class="legend-row"><span class="layer-line" style="background:#aaa"></span>Bus route</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── CONFIG ──────────────────────────────────────────────
+const COOLING_URL   = 'https://services2.arcgis.com/WazTM00Dcxqdhz7V/arcgis/rest/services/SD_Cooling_Centers/FeatureServer/0/query?where=1%3D1&outFields=*&f=geojson'
+const HOOD_URL      = 'https://services.arcgis.com/oxInpRhVIBxlo4pO/arcgis/rest/services/Neighborhoods/FeatureServer/0/query?where=1%3D1&outFields=NAME,COMMUNITY&f=geojson'
+const ROUTES_URL    = 'https://geo.sandag.org/server/rest/services/Hosted/Transit_Routes_GTFS/FeatureServer/0/query?where=1%3D1&outFields=route_type,route_color,route_short_name&f=geojson'
+const STOPS_URL     = 'https://geo.sandag.org/server/rest/services/Hosted/Transit_Stops_GTFS/FeatureServer/0/query?where=1%3D1&outFields=stop_name&f=geojson'
+const SD_CENTER     = [32.7157, -117.1611]
+const SD_ZOOM       = 11
+
+// ── DATE ────────────────────────────────────────────────
+document.getElementById('date-pill').textContent =
+  new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+
+// ── MAP INIT ────────────────────────────────────────────
+const map = L.map('map', { zoomControl: false, center: SD_CENTER, zoom: SD_ZOOM })
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+  subdomains: 'abcd', maxZoom: 19
+}).addTo(map)
+
+// ── CUSTOM ZOOM CONTROLS ────────────────────────────────
+document.getElementById('btn-zoom-in').onclick  = () => map.zoomIn()
+document.getElementById('btn-zoom-out').onclick = () => map.zoomOut()
+document.getElementById('btn-home').onclick     = () => map.setView(SD_CENTER, SD_ZOOM)
+
+// ── STATE ───────────────────────────────────────────────
+let allFeatures = []
+let currentFilter = 'all'
+let currentSearch = ''
+let selectedId = null
+let markersGroup = L.layerGroup().addTo(map)
+let hoodLayer, busLayer, trolleyLayer, stopsLayer
+const layerVisible = { centers: true, neighborhoods: true, bus: true, trolley: true, stops: false }
+
+// ── MARKER ICON ─────────────────────────────────────────
+function makeIcon(type, closed) {
+  const color = closed === 'Yes' ? '#888' : type === 'Library' ? '#4f6798' : '#1a7a9a'
+  const emoji = closed === 'Yes' ? '⚠️' : type === 'Library' ? '📚' : '🏊'
+  const html = `<div style="width:32px;height:32px;border-radius:50%;background:${color};border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,.2)">${emoji}</div>`
+  return L.divIcon({ html, className: '', iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18] })
+}
+
+// ── HOURS HELPER ────────────────────────────────────────
+function isOpenNow(props) {
+  const days = ['hours_sun','hours_mon','hours_tue','hours_wed','hours_thu','hours_fri','hours_sat']
+  const now = new Date()
+  const dayField = days[now.getDay()]
+  const hours = props[dayField]
+  if (!hours || hours === 'Closed' || props.is_temporarily_closed === 'Yes') return false
+  try {
+    const [open, close] = hours.split(' - ').map(t => {
+      const [time, ampm] = t.trim().split(' ')
+      let [h, m] = time.split(':').map(Number)
+      if (ampm === 'PM' && h !== 12) h += 12
+      if (ampm === 'AM' && h === 12) h = 0
+      return h * 60 + m
+    })
+    const cur = now.getHours() * 60 + now.getMinutes()
+    return cur >= open && cur < close
+  } catch { return false }
+}
+
+// ── POPUP BUILDER ───────────────────────────────────────
+function buildPopup(props) {
+  const closed = props.is_temporarily_closed === 'Yes'
+  const type   = props.facility_type || 'Library'
+  const hdrClass = closed ? 'popup-hdr-cls' : type === 'Library' ? 'popup-hdr-lib' : 'popup-hdr-rec'
+  const icon   = closed ? '⚠️' : type === 'Library' ? '📚' : '🏊'
+  const subtitle = closed ? 'Temporarily Closed' : `🌊 ${type} · District ${props.council_district || ''}`
+  const addr   = `${props.address || ''}, ${props.city || 'San Diego'}, CA ${props.zip_code || ''}`
+  const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`
+
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+  const dayFields = ['hours_sun','hours_mon','hours_tue','hours_wed','hours_thu','hours_fri','hours_sat']
+  const hoursRows = dayNames.map((d, i) => {
+    const h = props[dayFields[i]] || 'Closed'
+    const isClosed = h === 'Closed' || h === 'closed'
+    return `<div class="popup-hours-row"><span>${d}</span><span style="${isClosed ? 'color:#aaa' : 'font-weight:500'}">${h}</span></div>`
+  }).join('')
+
+  const closedBanner = closed
+    ? `<div class="closed-banner">⚠️ ${props.closure_notes || 'Temporarily closed — not available as a cooling center.'}</div>`
+    : ''
+
+  return `
+    <div class="popup-hdr ${hdrClass}">
+      <div class="popup-icon">${icon}</div>
+      <div>
+        <div class="popup-title">${props.facility_name || 'Cooling Center'}</div>
+        <div class="popup-subtitle">${subtitle}</div>
+      </div>
+    </div>
+    <div class="popup-body">
+      ${closedBanner}
+      <div class="popup-row">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span>${addr}</span>
+      </div>
+      <div class="popup-row">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12 19.79 19.79 0 0 1 1.08 3.4 2 2 0 0 1 3.06 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21 16.92z"/></svg>
+        <span>${props.phone || '—'}</span>
+      </div>
+      ${!closed ? `<div class="popup-hours-box"><div class="popup-hours-title">Hours</div>${hoursRows}</div>` : ''}
+    </div>
+    <div class="popup-actions">
+      <button class="popup-btn-primary" onclick="window.open('${mapsUrl}','_blank')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+        Directions
+      </button>
+      ${props.website_url ? `<button class="popup-btn-sec" onclick="window.open('${props.website_url}','_blank')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Info
+      </button>` : ''}
+    </div>`
+}
+
+// ── SIDEBAR ITEM ────────────────────────────────────────
+function buildItem(feature) {
+  const p = feature.properties
+  const id = feature.id || p.OBJECTID
+  const closed = p.is_temporarily_closed === 'Yes'
+  const type = p.facility_type || 'Library'
+  const icClass = closed ? 'ic-cls' : type === 'Library' ? 'ic-lib' : 'ic-rec'
+  const bClass  = closed ? 'b-cls' : type === 'Library' ? 'b-lib' : 'b-rec'
+  const badgeLabel = closed ? 'Temporarily closed' : type
+  const icon = closed ? '⚠️' : type === 'Library' ? '📚' : '🏊'
+  const open = isOpenNow(p)
+
+  const div = document.createElement('div')
+  div.className = 'item' + (selectedId === id ? ' selected' : '')
+  div.dataset.id = id
+  div.innerHTML = `
+    <div class="item-icon ${icClass}">${icon}</div>
+    <div class="item-body">
+      <div class="item-name">${p.facility_name || 'Cooling Center'}</div>
+      <div class="item-meta">${p.neighborhood || ''} · District ${p.council_district || ''}</div>
+      <span class="badge ${bClass}">${badgeLabel}</span>
+      ${open ? `<span class="badge" style="background:#e8f4cf;color:#2d4a1a;margin-left:4px">Open now</span>` : ''}
+    </div>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:4px;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>`
+
+  div.addEventListener('click', () => selectFeature(feature))
+  return div
+}
+
+// ── RENDER LIST ─────────────────────────────────────────
+function renderList() {
+  const list = document.getElementById('results-list')
+  const empty = document.getElementById('empty-state')
+  const filtered = getFiltered()
+
+  list.querySelectorAll('.item').forEach(el => el.remove())
+  document.getElementById('list-count').textContent = `${filtered.length} cooling center${filtered.length !== 1 ? 's' : ''}`
+
+  if (filtered.length === 0) {
+    empty.style.display = 'block'
+  } else {
+    empty.style.display = 'none'
+    filtered.forEach(f => list.appendChild(buildItem(f)))
+  }
+
+  renderMarkers(filtered)
+}
+
+// ── FILTER ──────────────────────────────────────────────
+function getFiltered() {
+  return allFeatures.filter(f => {
+    const p = f.properties
+    const search = currentSearch.toLowerCase()
+    const matchSearch = !search ||
+      (p.facility_name || '').toLowerCase().includes(search) ||
+      (p.neighborhood  || '').toLowerCase().includes(search) ||
+      (p.address       || '').toLowerCase().includes(search)
+    const matchFilter =
+      currentFilter === 'all'                   ? true :
+      currentFilter === 'open'                  ? isOpenNow(p) :
+      (p.facility_type || '') === currentFilter ? true : false
+    return matchSearch && matchFilter
+  })
+}
+
+// ── MARKERS ─────────────────────────────────────────────
+const markerMap = {}
+function renderMarkers(features) {
+  markersGroup.clearLayers()
+  Object.keys(markerMap).forEach(k => delete markerMap[k])
+  features.forEach(f => {
+    const p = f.properties
+    const id = f.id || p.OBJECTID
+    const coords = f.geometry?.coordinates
+    if (!coords) return
+    const marker = L.marker([coords[1], coords[0]], { icon: makeIcon(p.facility_type, p.is_temporarily_closed) })
+    marker.bindPopup(buildPopup(p), { maxWidth: 240, minWidth: 220 })
+    marker.on('click', () => selectFeature(f))
+    markersGroup.addLayer(marker)
+    markerMap[id] = marker
+  })
+}
+
+// ── SELECT ──────────────────────────────────────────────
+function selectFeature(feature) {
+  const p = feature.properties
+  const id = feature.id || p.OBJECTID
+  selectedId = id
+
+  document.querySelectorAll('.item').forEach(el => {
+    el.classList.toggle('selected', el.dataset.id == id)
+  })
+  const el = document.querySelector(`.item[data-id="${id}"]`)
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+
+  const marker = markerMap[id]
+  if (marker) {
+    map.flyTo(marker.getLatLng(), 15, { duration: .8 })
+    setTimeout(() => marker.openPopup(), 850)
+  }
+}
+
+// ── LAYER TOGGLES ────────────────────────────────────────
+function wireToggle(btnId, onFn, offFn, key) {
+  const btn = document.getElementById(btnId)
+  btn.addEventListener('click', () => {
+    layerVisible[key] = !layerVisible[key]
+    btn.className = 'toggle ' + (layerVisible[key] ? 'on' : 'off')
+    layerVisible[key] ? onFn() : offFn()
+  })
+}
+
+// ── BUS STOPS VISIBILITY BY ZOOM ────────────────────────
+function updateStopsVisibility() {
+  if (!stopsLayer) return
+  if (map.getZoom() >= 14 && layerVisible.stops) {
+    if (!map.hasLayer(stopsLayer)) map.addLayer(stopsLayer)
+  } else {
+    if (map.hasLayer(stopsLayer)) map.removeLayer(stopsLayer)
+  }
+}
+map.on('zoomend', updateStopsVisibility)
+
+// ── FETCH HELPERS ────────────────────────────────────────
+async function fetchGeoJSON(url) {
+  try {
+    const r = await fetch(url)
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    return await r.json()
+  } catch (e) {
+    console.warn('Failed to fetch:', url, e)
+    return null
+  }
+}
+
+// ── ROUTE COLOR ──────────────────────────────────────────
+function routeStyle(feature) {
+  const t = feature.properties?.route_type
+  if (t === 0 || t === 1) return { color: '#00A6CE', weight: 2,   opacity: .75 }  // trolley
+  if (t === 2)            return { color: '#E87722', weight: 2,   opacity: .7  }  // rail
+  return                         { color: '#aaaaaa', weight: 1.2, opacity: .6  }  // bus
+}
+
+// ── INIT ─────────────────────────────────────────────────
+async function init() {
+  // Cooling centers (critical)
+  const cooling = await fetchGeoJSON(COOLING_URL)
+  if (cooling?.features) {
+    allFeatures = cooling.features
+    const libs    = allFeatures.filter(f => f.properties.facility_type === 'Library').length
+    const recs    = allFeatures.filter(f => f.properties.facility_type === 'Recreation Center').length
+    const closed  = allFeatures.filter(f => f.properties.is_temporarily_closed === 'Yes').length
+    document.getElementById('stat-lib').textContent   = libs
+    document.getElementById('stat-rec').textContent   = recs
+    document.getElementById('stat-cls').textContent   = closed
+    document.getElementById('stat-total').textContent = allFeatures.length
+    document.getElementById('count-pill').textContent = `${allFeatures.length} locations`
+    renderList()
+  }
+  document.getElementById('loading').classList.add('hidden')
+
+  // Neighborhoods (non-critical)
+  fetchGeoJSON(HOOD_URL).then(data => {
+    if (!data) return
+    hoodLayer = L.geoJSON(data, {
+      style: { color: '#4f6798', weight: 1, dashArray: '4 3', fillColor: '#88bee8', fillOpacity: .06, opacity: .5 },
+      onEachFeature: (f, layer) => {
+        const name = f.properties?.NAME || f.properties?.COMMUNITY || ''
+        if (name) layer.bindTooltip(name, { permanent: false, direction: 'center', className: 'neighborhood-tip' })
+      }
+    }).addTo(map)
+    wireToggle('tog-neighborhoods',
+      () => map.addLayer(hoodLayer),
+      () => map.removeLayer(hoodLayer),
+      'neighborhoods'
+    )
+  })
+
+  // Transit routes — try SANDAG, gracefully skip if CORS blocked
+  fetchGeoJSON(ROUTES_URL).then(data => {
+    if (!data) { console.info('Transit routes unavailable (CORS) — skipping'); return }
+    const busFeatures    = { type: 'FeatureCollection', features: data.features.filter(f => f.properties?.route_type === 3 || f.properties?.route_type == null) }
+    const trolleyFeatures = { type: 'FeatureCollection', features: data.features.filter(f => f.properties?.route_type === 0 || f.properties?.route_type === 1) }
+
+    busLayer = L.geoJSON(busFeatures, { style: { color: '#aaa', weight: 1.2, opacity: .6 } }).addTo(map)
+    trolleyLayer = L.geoJSON(trolleyFeatures, { style: { color: '#00A6CE', weight: 2, opacity: .75 } }).addTo(map)
+
+    wireToggle('tog-bus',
+      () => { if (busLayer) map.addLayer(busLayer) },
+      () => { if (busLayer) map.removeLayer(busLayer) },
+      'bus'
+    )
+    wireToggle('tog-trolley',
+      () => { if (trolleyLayer) map.addLayer(trolleyLayer) },
+      () => { if (trolleyLayer) map.removeLayer(trolleyLayer) },
+      'trolley'
+    )
+  })
+
+  // Bus stops — CORS may block; only show at zoom 14+
+  fetchGeoJSON(STOPS_URL).then(data => {
+    if (!data) { console.info('Bus stops unavailable (CORS) — skipping'); return }
+    stopsLayer = L.geoJSON(data, {
+      pointToLayer: (f, latlng) => L.circleMarker(latlng, {
+        radius: 3, fillColor: '#aaa', color: '#fff', weight: 1, fillOpacity: .7
+      }),
+      onEachFeature: (f, layer) => {
+        if (f.properties?.stop_name) layer.bindTooltip(f.properties.stop_name, { direction: 'top' })
+      }
+    })
+    wireToggle('tog-stops',
+      () => updateStopsVisibility(),
+      () => { if (stopsLayer && map.hasLayer(stopsLayer)) map.removeLayer(stopsLayer) },
+      'stops'
+    )
+  })
+
+  // Cooling centers toggle (always available)
+  wireToggle('tog-centers',
+    () => map.addLayer(markersGroup),
+    () => map.removeLayer(markersGroup),
+    'centers'
+  )
+}
+
+// ── SEARCH & FILTER EVENTS ───────────────────────────────
+document.getElementById('search-input').addEventListener('input', e => {
+  currentSearch = e.target.value
+  renderList()
+})
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'))
+    chip.classList.add('active')
+    currentFilter = chip.dataset.filter
+    renderList()
+  })
+})
+
+init()
+</script>
+</body>
+</html>
