@@ -221,6 +221,7 @@
   .legend-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
   .legend-row:last-child { margin-bottom: 0; }
   .legend-divider { border: none; border-top: 1px solid var(--border); margin: 5px 0; }
+  .heat-swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
 
   /* ── CUSTOM PIN MARKERS ── */
   .marker-pin {
@@ -345,6 +346,18 @@
         <span class="layer-label"><span class="layer-dot" style="background:#aaa;width:7px;height:7px"></span>Bus stops</span>
         <button class="toggle off" id="tog-stops" aria-label="Toggle bus stops"><span class="toggle-thumb"></span></button>
       </div>
+      <hr class="legend-divider">
+      <div class="layer-row">
+        <span class="layer-label">
+          <span class="layer-dot" style="background:linear-gradient(135deg,#02b12b,#fce13d,#fa8b3c,#e8342b,#9e5fad)"></span>
+          NOAA HeatRisk
+          <span title="Shows how risky the heat is expected to be over the next 24 hours, from green (safe) to magenta (dangerous). Based on NOAA/NWS forecasts and refreshed automatically — see the color key below the map." style="cursor:help;color:var(--text-3)">ⓘ</span>
+        </span>
+        <button class="toggle on" id="tog-heatrisk" aria-label="Toggle NOAA HeatRisk layer"><span class="toggle-thumb"></span></button>
+      </div>
+      <div style="font-size:9px;color:var(--text-3);line-height:1.4;margin-top:2px">
+        Shows expected heat danger for the next 24 hours. Refreshed automatically by NOAA.
+      </div>
     </div>
 
     <!-- Zoom controls -->
@@ -362,6 +375,13 @@
       <hr class="legend-divider">
       <div class="legend-row"><span class="layer-line" style="background:#00A6CE"></span>Trolley</div>
       <div class="legend-row"><span class="layer-line" style="background:#aaa"></span>Bus route</div>
+      <hr class="legend-divider">
+      <div style="font-size:10px;font-weight:600;color:var(--text);margin-bottom:4px">NOAA HeatRisk</div>
+      <div class="legend-row"><span class="heat-swatch" style="background:#02b12b"></span>No concern — enjoy the day safely</div>
+      <div class="legend-row"><span class="heat-swatch" style="background:#fce13d"></span>Take it easy — drink water and stay in the shade</div>
+      <div class="legend-row"><span class="heat-swatch" style="background:#fa8b3c"></span>Be careful — limit time outside and stay hydrated</div>
+      <div class="legend-row"><span class="heat-swatch" style="background:#e8342b"></span>Stay cool — heat affects most people today</div>
+      <div class="legend-row"><span class="heat-swatch" style="background:#9e5fad"></span>Stay inside — dangerous heat, use a cooling center</div>
     </div>
   </div>
 </div>
@@ -373,6 +393,7 @@ const COOLING_URL   = 'https://services2.arcgis.com/WazTM00Dcxqdhz7V/arcgis/rest
 const HOOD_URL      = 'https://services.arcgis.com/oxInpRhVIBxlo4pO/arcgis/rest/services/Neighborhoods/FeatureServer/0/query?where=1%3D1&outFields=NAME,COMMUNITY&f=geojson'
 const ROUTES_URL    = 'https://geo.sandag.org/server/rest/services/Hosted/Transit_Routes_GTFS/FeatureServer/0/query?where=1%3D1&outFields=route_type,route_color,route_short_name&f=geojson'
 const STOPS_URL     = 'https://geo.sandag.org/server/rest/services/Hosted/Transit_Stops_GTFS/FeatureServer/0/query?where=1%3D1&outFields=stop_name&f=geojson'
+const HEATRISK_WMS  = 'https://mapservices.weather.noaa.gov/experimental/services/NWS_HeatRisk/ImageServer/WMSServer'
 const SD_CENTER     = [32.7157, -117.1611]
 const SD_ZOOM       = 11
 
@@ -400,7 +421,22 @@ let currentSearch = ''
 let selectedId = null
 let markersGroup = L.layerGroup().addTo(map)
 let hoodLayer, busLayer, trolleyLayer, stopsLayer
-const layerVisible = { centers: true, neighborhoods: true, bus: true, trolley: true, stops: false }
+const layerVisible = { centers: true, neighborhoods: true, bus: true, trolley: true, stops: false, heatrisk: true }
+
+// ── NOAA HEATRISK LAYER (added early so it sits beneath the cooling center markers) ──
+const heatRiskLayer = L.tileLayer.wms(HEATRISK_WMS, {
+  layers: 'NWS_HeatRisk',
+  format: 'image/png',
+  transparent: true,
+  opacity: 0.4,
+  attribution: 'NOAA/NWS HeatRisk (experimental, updates daily)'
+}).addTo(map)
+
+wireToggle('tog-heatrisk',
+  () => map.addLayer(heatRiskLayer),
+  () => map.removeLayer(heatRiskLayer),
+  'heatrisk'
+)
 
 // ── MARKER ICON ─────────────────────────────────────────
 function makeIcon(type, closed) {
