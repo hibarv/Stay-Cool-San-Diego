@@ -185,12 +185,16 @@
     background: var(--white); border: 1px solid var(--border); border-radius: 10px;
     padding: 10px 12px; width: 172px; box-shadow: 0 2px 8px rgba(0,0,0,.08);
   }
-  .layer-control-title { font-size: 10px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .layer-control-title { font-size: 10px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .5px; }
+  .panel-toggle {
+    all: unset; box-sizing: border-box; display: flex; align-items: center;
+    justify-content: space-between; width: 100%; margin-bottom: 8px; cursor: default;
+  }
+  .panel-toggle .chevron { display: none; flex-shrink: 0; color: var(--text-3); }
   .layer-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; font-size: 12px; color: var(--text); }
   .layer-label { display: flex; align-items: center; gap: 6px; }
   .layer-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   .layer-line { width: 18px; height: 3px; border-radius: 2px; flex-shrink: 0; }
-  .layer-dash { width: 18px; height: 2px; border-top: 2px dashed var(--baltic); flex-shrink: 0; }
   .toggle { width: 28px; height: 16px; border-radius: 8px; cursor: pointer; position: relative; flex-shrink: 0; border: none; transition: background .2s; }
   .toggle.on { background: var(--baltic); }
   .toggle.off { background: var(--border); }
@@ -222,6 +226,8 @@
   .legend-row:last-child { margin-bottom: 0; }
   .legend-divider { border: none; border-top: 1px solid var(--border); margin: 5px 0; }
   .heat-swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .legend-title { display: none; font-size: 10px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .5px; }
+  .legend .panel-toggle { margin-bottom: 0; cursor: default; }
 
   /* ── CUSTOM PIN MARKERS ── */
   .marker-pin {
@@ -233,14 +239,9 @@
   .marker-rec  { background: #1a7a9a; }
   .marker-cls  { background: #888; opacity: .85; }
 
-  /* ── MOBILE ── */
-  .mobile-toggle {
-    display: none; position: absolute; bottom: 70px; left: 50%;
-    transform: translateX(-50%); z-index: 900;
-    background: var(--baltic); color: #fff; border: none; border-radius: 20px;
-    padding: 8px 18px; font-size: 12px; font-family: inherit; cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,.2); font-weight: 500;
-    display: none; align-items: center; gap: 6px;
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .sidebar { width: 240px; min-width: 240px; }
   }
 
   @media (max-width: 680px) {
@@ -250,10 +251,54 @@
       border-right: none; border-top: 1px solid var(--border);
     }
     #map { position: absolute; inset: 0; }
-    .layer-control { top: 8px; right: 8px; width: 150px; }
+
+    .layer-control {
+      top: 8px; right: 8px; width: 132px; padding: 8px 10px;
+      max-height: 44%; overflow-y: auto;
+    }
+    .layer-control-title { font-size: 9px; }
+    .layer-row { font-size: 11px; padding: 3px 0; }
+
+    .legend {
+      bottom: 8px; left: 8px; max-width: 48%;
+      max-height: 40%; overflow-y: auto;
+      padding: 6px 8px; font-size: 10px;
+    }
+    .legend-row { gap: 5px; margin-bottom: 3px; }
+
+    .map-controls { bottom: 8px; right: 8px; }
+    .map-btn { width: 28px; height: 28px; font-size: 14px; }
+
+    .search-wrap { padding: 8px; }
+    #search-input { font-size: 12px; padding: 7px 8px 7px 30px; }
+    .filters { padding: 6px 8px; gap: 4px; }
+    .chip { font-size: 10px; padding: 3px 8px; }
+
     .topbar-right { display: none; }
     .stats-bar { display: none; }
-    .mobile-toggle { display: flex; }
+
+    /* Collapsible layer control / legend panels */
+    .layer-control .panel-toggle, .legend .panel-toggle { margin-bottom: 6px; cursor: pointer; }
+    .panel-toggle .chevron { display: block; transition: transform .15s; }
+    .legend-title { display: block; }
+    .layer-control.collapsed .panel-body,
+    .legend.collapsed .panel-body { display: none; }
+    .layer-control.collapsed .panel-toggle,
+    .legend.collapsed .panel-toggle { margin-bottom: 0; }
+    .layer-control.collapsed, .legend.collapsed {
+      width: auto; max-width: 60%; max-height: none; overflow: visible; padding: 8px 10px;
+    }
+    .layer-control.collapsed .chevron,
+    .legend.collapsed .chevron { transform: rotate(-90deg); }
+  }
+
+  @media (max-width: 400px) {
+    .topbar-title { font-size: 13px; }
+    .topbar-sub { font-size: 10px; }
+    .layer-control { width: 112px; }
+    .layer-row { font-size: 10px; }
+    .legend { max-width: 52%; font-size: 9px; }
+    .item-name { font-size: 11px; }
   }
 
   /* ── LOADING OVERLAY ── */
@@ -324,39 +369,40 @@
     <div id="map"></div>
 
     <!-- Layer control -->
-    <div class="layer-control">
-      <div class="layer-control-title">Map layers</div>
-      <div class="layer-row">
-        <span class="layer-label"><span class="layer-dot" style="background:var(--baltic)"></span>Cooling centers</span>
-        <button class="toggle on" id="tog-centers" aria-label="Toggle cooling centers"><span class="toggle-thumb"></span></button>
-      </div>
-      <div class="layer-row">
-        <span class="layer-label"><span class="layer-dash"></span>Neighborhoods</span>
-        <button class="toggle on" id="tog-neighborhoods" aria-label="Toggle neighborhoods"><span class="toggle-thumb"></span></button>
-      </div>
-      <div class="layer-row">
-        <span class="layer-label"><span class="layer-line" style="background:#aaa"></span>Bus routes</span>
-        <button class="toggle on" id="tog-bus" aria-label="Toggle bus routes"><span class="toggle-thumb"></span></button>
-      </div>
-      <div class="layer-row">
-        <span class="layer-label"><span class="layer-line" style="background:#00A6CE"></span>Trolley</span>
-        <button class="toggle on" id="tog-trolley" aria-label="Toggle trolley"><span class="toggle-thumb"></span></button>
-      </div>
-      <div class="layer-row">
-        <span class="layer-label"><span class="layer-dot" style="background:#aaa;width:7px;height:7px"></span>Bus stops</span>
-        <button class="toggle off" id="tog-stops" aria-label="Toggle bus stops"><span class="toggle-thumb"></span></button>
-      </div>
-      <hr class="legend-divider">
-      <div class="layer-row">
-        <span class="layer-label">
-          <span class="layer-dot" style="background:linear-gradient(135deg,#02b12b,#fce13d,#fa8b3c,#e8342b,#9e5fad)"></span>
-          NOAA HeatRisk
-          <span title="Shows how risky the heat is expected to be over the next 24 hours, from green (safe) to magenta (dangerous). Based on NOAA/NWS forecasts and refreshed automatically — see the color key below the map." style="cursor:help;color:var(--text-3)">ⓘ</span>
-        </span>
-        <button class="toggle on" id="tog-heatrisk" aria-label="Toggle NOAA HeatRisk layer"><span class="toggle-thumb"></span></button>
-      </div>
-      <div style="font-size:9px;color:var(--text-3);line-height:1.4;margin-top:2px">
-        Shows expected heat danger for the next 24 hours. Refreshed automatically by NOAA.
+    <div class="layer-control collapsed" id="layer-control">
+      <button class="panel-toggle" id="layer-control-toggle" aria-expanded="false" aria-controls="layer-control-body">
+        <span class="layer-control-title">Map layers</span>
+        <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="panel-body" id="layer-control-body">
+        <div class="layer-row">
+          <span class="layer-label"><span class="layer-dot" style="background:var(--baltic)"></span>Cooling centers</span>
+          <button class="toggle on" id="tog-centers" aria-label="Toggle cooling centers"><span class="toggle-thumb"></span></button>
+        </div>
+        <div class="layer-row">
+          <span class="layer-label"><span class="layer-line" style="background:#e8622c"></span>Bus routes</span>
+          <button class="toggle on" id="tog-bus" aria-label="Toggle bus routes"><span class="toggle-thumb"></span></button>
+        </div>
+        <div class="layer-row">
+          <span class="layer-label"><span class="layer-line" style="background:#0086ab"></span>Trolley</span>
+          <button class="toggle on" id="tog-trolley" aria-label="Toggle trolley"><span class="toggle-thumb"></span></button>
+        </div>
+        <div class="layer-row">
+          <span class="layer-label"><span class="layer-dot" style="background:#e8622c;width:7px;height:7px"></span>Bus stops</span>
+          <button class="toggle off" id="tog-stops" aria-label="Toggle bus stops"><span class="toggle-thumb"></span></button>
+        </div>
+        <hr class="legend-divider">
+        <div class="layer-row">
+          <span class="layer-label">
+            <span class="layer-dot" style="background:linear-gradient(135deg,#02b12b,#fce13d,#fa8b3c,#e8342b,#9e5fad)"></span>
+            NOAA HeatRisk
+            <span title="Shows how risky the heat is expected to be over the next 24 hours, from green (safe) to magenta (dangerous). Based on NOAA/NWS forecasts and refreshed automatically — see the color key below the map." style="cursor:help;color:var(--text-3)">ⓘ</span>
+          </span>
+          <button class="toggle on" id="tog-heatrisk" aria-label="Toggle NOAA HeatRisk layer"><span class="toggle-thumb"></span></button>
+        </div>
+        <div style="font-size:9px;color:var(--text-3);line-height:1.4;margin-top:2px">
+          Shows expected heat danger for the next 24 hours. Refreshed automatically by NOAA.
+        </div>
       </div>
     </div>
 
@@ -368,20 +414,26 @@
     </div>
 
     <!-- Legend -->
-    <div class="legend">
-      <div class="legend-row"><span class="layer-dot" style="background:var(--baltic)"></span>Library</div>
-      <div class="legend-row"><span class="layer-dot" style="background:#1a7a9a"></span>Rec Center</div>
-      <div class="legend-row"><span class="layer-dot" style="background:#888"></span>Closed</div>
-      <hr class="legend-divider">
-      <div class="legend-row"><span class="layer-line" style="background:#00A6CE"></span>Trolley</div>
-      <div class="legend-row"><span class="layer-line" style="background:#aaa"></span>Bus route</div>
-      <hr class="legend-divider">
-      <div style="font-size:10px;font-weight:600;color:var(--text);margin-bottom:4px">NOAA HeatRisk</div>
-      <div class="legend-row"><span class="heat-swatch" style="background:#02b12b"></span>No concern — enjoy the day safely</div>
-      <div class="legend-row"><span class="heat-swatch" style="background:#fce13d"></span>Take it easy — drink water and stay in the shade</div>
-      <div class="legend-row"><span class="heat-swatch" style="background:#fa8b3c"></span>Be careful — limit time outside and stay hydrated</div>
-      <div class="legend-row"><span class="heat-swatch" style="background:#e8342b"></span>Stay cool — heat affects most people today</div>
-      <div class="legend-row"><span class="heat-swatch" style="background:#9e5fad"></span>Stay inside — dangerous heat, use a cooling center</div>
+    <div class="legend collapsed" id="legend">
+      <button class="panel-toggle" id="legend-toggle" aria-expanded="false" aria-controls="legend-body">
+        <span class="legend-title">Legend</span>
+        <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="panel-body" id="legend-body">
+        <div class="legend-row"><span class="layer-dot" style="background:var(--baltic)"></span>Library</div>
+        <div class="legend-row"><span class="layer-dot" style="background:#1a7a9a"></span>Rec Center</div>
+        <div class="legend-row"><span class="layer-dot" style="background:#888"></span>Closed</div>
+        <hr class="legend-divider">
+        <div class="legend-row"><span class="layer-line" style="background:#0086ab"></span>Trolley</div>
+        <div class="legend-row"><span class="layer-line" style="background:#e8622c"></span>Bus route</div>
+        <hr class="legend-divider">
+        <div style="font-size:10px;font-weight:600;color:var(--text);margin-bottom:4px">NOAA HeatRisk</div>
+        <div class="legend-row"><span class="heat-swatch" style="background:#02b12b"></span>No concern — enjoy the day safely</div>
+        <div class="legend-row"><span class="heat-swatch" style="background:#fce13d"></span>Take it easy — drink water and stay in the shade</div>
+        <div class="legend-row"><span class="heat-swatch" style="background:#fa8b3c"></span>Be careful — limit time outside and stay hydrated</div>
+        <div class="legend-row"><span class="heat-swatch" style="background:#e8342b"></span>Stay cool — heat affects most people today</div>
+        <div class="legend-row"><span class="heat-swatch" style="background:#9e5fad"></span>Stay inside — dangerous heat, use a cooling center</div>
+      </div>
     </div>
   </div>
 </div>
@@ -390,7 +442,6 @@
 <script>
 // ── CONFIG ──────────────────────────────────────────────
 const COOLING_URL   = 'https://services2.arcgis.com/WazTM00Dcxqdhz7V/arcgis/rest/services/SD_Cooling_Centers/FeatureServer/0/query?where=1%3D1&outFields=*&f=geojson'
-const HOOD_URL      = 'https://services.arcgis.com/oxInpRhVIBxlo4pO/arcgis/rest/services/Neighborhoods/FeatureServer/0/query?where=1%3D1&outFields=NAME,COMMUNITY&f=geojson'
 const ROUTES_URL    = 'https://geo.sandag.org/server/rest/services/Hosted/Transit_Routes_GTFS/FeatureServer/0/query?where=1%3D1&outFields=route_type,route_color,route_short_name&f=geojson'
 const STOPS_URL     = 'https://geo.sandag.org/server/rest/services/Hosted/Transit_Stops_GTFS/FeatureServer/0/query?where=1%3D1&outFields=stop_name&f=geojson'
 const HEATRISK_WMS  = 'https://mapservices.weather.noaa.gov/experimental/services/NWS_HeatRisk/ImageServer/WMSServer'
@@ -404,7 +455,7 @@ document.getElementById('date-pill').textContent =
 // ── MAP INIT ────────────────────────────────────────────
 const map = L.map('map', { zoomControl: false, center: SD_CENTER, zoom: SD_ZOOM })
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
   attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
   subdomains: 'abcd', maxZoom: 19
 }).addTo(map)
@@ -414,14 +465,26 @@ document.getElementById('btn-zoom-in').onclick  = () => map.zoomIn()
 document.getElementById('btn-zoom-out').onclick = () => map.zoomOut()
 document.getElementById('btn-home').onclick     = () => map.setView(SD_CENTER, SD_ZOOM)
 
+// ── COLLAPSIBLE MOBILE PANELS ────────────────────────────
+function wirePanelToggle(panelId, toggleId) {
+  const panel  = document.getElementById(panelId)
+  const toggle = document.getElementById(toggleId)
+  toggle.addEventListener('click', () => {
+    const collapsed = panel.classList.toggle('collapsed')
+    toggle.setAttribute('aria-expanded', String(!collapsed))
+  })
+}
+wirePanelToggle('layer-control', 'layer-control-toggle')
+wirePanelToggle('legend', 'legend-toggle')
+
 // ── STATE ───────────────────────────────────────────────
 let allFeatures = []
 let currentFilter = 'all'
 let currentSearch = ''
 let selectedId = null
 let markersGroup = L.layerGroup().addTo(map)
-let hoodLayer, busLayer, trolleyLayer, stopsLayer
-const layerVisible = { centers: true, neighborhoods: true, bus: true, trolley: true, stops: false, heatrisk: true }
+let busLayer, trolleyLayer, stopsLayer
+const layerVisible = { centers: true, bus: true, trolley: true, stops: false, heatrisk: true }
 
 // ── NOAA HEATRISK LAYER (added early so it sits beneath the cooling center markers) ──
 const heatRiskLayer = L.tileLayer.wms(HEATRISK_WMS, {
@@ -681,31 +744,15 @@ async function init() {
   }
   document.getElementById('loading').classList.add('hidden')
 
-  // Neighborhoods (non-critical)
-  fetchGeoJSON(HOOD_URL).then(data => {
-    if (!data) return
-    hoodLayer = L.geoJSON(data, {
-      style: { color: '#4f6798', weight: 1, dashArray: '4 3', fillColor: '#88bee8', fillOpacity: .06, opacity: .5 },
-      onEachFeature: (f, layer) => {
-        const name = f.properties?.NAME || f.properties?.COMMUNITY || ''
-        if (name) layer.bindTooltip(name, { permanent: false, direction: 'center', className: 'neighborhood-tip' })
-      }
-    }).addTo(map)
-    wireToggle('tog-neighborhoods',
-      () => map.addLayer(hoodLayer),
-      () => map.removeLayer(hoodLayer),
-      'neighborhoods'
-    )
-  })
-
   // Transit routes — try SANDAG, gracefully skip if CORS blocked
   fetchGeoJSON(ROUTES_URL).then(data => {
     if (!data) { console.info('Transit routes unavailable (CORS) — skipping'); return }
-    const busFeatures    = { type: 'FeatureCollection', features: data.features.filter(f => f.properties?.route_type === 3 || f.properties?.route_type == null) }
-    const trolleyFeatures = { type: 'FeatureCollection', features: data.features.filter(f => f.properties?.route_type === 0 || f.properties?.route_type === 1) }
+    const routeType = f => f.properties?.route_type != null ? Number(f.properties.route_type) : null
+    const busFeatures    = { type: 'FeatureCollection', features: data.features.filter(f => routeType(f) === 3 || routeType(f) == null) }
+    const trolleyFeatures = { type: 'FeatureCollection', features: data.features.filter(f => routeType(f) === 0 || routeType(f) === 1) }
 
-    busLayer = L.geoJSON(busFeatures, { style: { color: '#aaa', weight: 1.2, opacity: .6 } }).addTo(map)
-    trolleyLayer = L.geoJSON(trolleyFeatures, { style: { color: '#00A6CE', weight: 2, opacity: .75 } }).addTo(map)
+    busLayer = L.geoJSON(busFeatures, { style: { color: '#e8622c', weight: 2.5, opacity: .85 } }).addTo(map)
+    trolleyLayer = L.geoJSON(trolleyFeatures, { style: { color: '#0086ab', weight: 3.5, opacity: .95 } }).addTo(map)
 
     wireToggle('tog-bus',
       () => { if (busLayer) map.addLayer(busLayer) },
@@ -724,7 +771,7 @@ async function init() {
     if (!data) { console.info('Bus stops unavailable (CORS) — skipping'); return }
     stopsLayer = L.geoJSON(data, {
       pointToLayer: (f, latlng) => L.circleMarker(latlng, {
-        radius: 3, fillColor: '#aaa', color: '#fff', weight: 1, fillOpacity: .7
+        radius: 4, fillColor: '#e8622c', color: '#fff', weight: 1.5, fillOpacity: .95
       }),
       onEachFeature: (f, layer) => {
         if (f.properties?.stop_name) layer.bindTooltip(f.properties.stop_name, { direction: 'top' })
