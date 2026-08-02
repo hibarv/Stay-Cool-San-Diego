@@ -47,13 +47,23 @@
   }
   .brand-row { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
   .brand-badge {
-    width: 46px; height: 46px; border-radius: 13px; background: var(--rust);
+    width: 46px; height: 46px; border-radius: 13px; background: var(--rust); color: var(--cream);
     border: 2px solid var(--ink); display: flex; align-items: center; justify-content: center;
     font-size: 22px; flex-shrink: 0;
   }
   .brand-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 28px; line-height: 1.05; color: var(--rust); }
   .hero-divider { width: 2px; align-self: stretch; background: var(--ink); opacity: .18; border-radius: 2px; flex-shrink: 0; }
   .hero-copy { font-size: 13px; color: var(--ink-soft); line-height: 1.55; max-width: 62ch; }
+  .hero-actions { margin-left: auto; display: flex; gap: 8px; flex-shrink: 0; }
+  .hero-btn {
+    all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 12px; white-space: nowrap;
+    padding: 8px 14px; border-radius: 20px; border: 2px solid var(--ink); cursor: pointer;
+    background: var(--white); color: var(--ink); box-shadow: 2px 2px 0 var(--ink);
+    transition: transform .1s ease, box-shadow .1s ease;
+  }
+  .hero-btn:hover { transform: translate(-2px,-2px); box-shadow: 4px 4px 0 var(--ink); background: var(--yellow); }
+  .hero-btn:active { transform: translate(0,0); box-shadow: 1px 1px 0 var(--ink); }
 
   /* ── MAIN BODY ── */
   .main { display: flex; flex: 1; overflow: hidden; gap: 14px; padding: 0 14px 14px; }
@@ -134,7 +144,7 @@
 
   /* ── BASEMAP THEME ── */
   /* warms + flattens the basemap tiles to sit with the retro palette (no gradients, just a tone shift) */
-  .leaflet-tile-pane { filter: saturate(1.2) sepia(.18) hue-rotate(-8deg) brightness(1.05) contrast(1.03); }
+  .leaflet-tile-pane { filter: saturate(1.6) hue-rotate(-8deg) brightness(1.03) contrast(1.02); }
 
   /* ── LEAFLET POPUP CUSTOM ── */
   .leaflet-popup-content-wrapper {
@@ -208,6 +218,45 @@
     z-index: 2;
   }
 
+  /* ── INFO MODAL (Credits / Contact) — same pattern as the mobile popup modal, but available on
+     any screen size since it's opened directly from a button, not conditioned on viewport width ── */
+  .info-modal {
+    position: fixed; inset: 0; z-index: 5000; display: none;
+    align-items: center; justify-content: center; padding: 20px;
+    background: rgba(36,27,20,.6);
+  }
+  .info-modal.open { display: flex; }
+  .info-modal-card {
+    position: relative; width: 100%; max-width: 460px; max-height: 85vh;
+    background: var(--cream); border: 2.5px solid var(--ink); border-radius: 20px;
+    overflow-y: auto; box-shadow: 6px 6px 0 var(--ink);
+  }
+  .info-modal-close {
+    all: unset; box-sizing: border-box; position: absolute; top: 8px; right: 8px;
+    width: 40px; height: 40px; border-radius: 50%; background: var(--rust); color: var(--cream);
+    border: 3px solid var(--ink); font-size: 18px; font-weight: 700; cursor: pointer;
+    box-shadow: 2px 2px 0 var(--ink); display: flex; align-items: center; justify-content: center;
+    z-index: 2;
+  }
+  .info-body { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 10px; background: var(--cream); }
+  .info-text { font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; }
+  .info-person {
+    background: var(--white); border: 2px solid var(--ink); border-radius: 12px;
+    padding: 10px 12px; display: flex; flex-direction: column; gap: 1px;
+  }
+  .info-person-name { font-family: 'Fraunces', serif; font-style: italic; font-weight: 700; font-size: 15px; color: var(--ink); }
+  .info-person-role { font-size: 11px; color: var(--ink-soft); font-weight: 600; }
+  .info-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }
+  .info-actions .popup-btn-primary, .info-actions .popup-btn-sec { flex: none; text-decoration: none; padding: 9px 0; }
+  .info-divider-label {
+    font-size: 10px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase;
+    letter-spacing: .5px; border-top: 2px solid var(--ink); opacity: .9; padding-top: 10px; margin-top: 2px;
+  }
+  .info-source { display: flex; flex-direction: column; gap: 1px; }
+  .info-source-label { font-size: 12px; font-weight: 600; color: var(--ink); }
+  .info-source-link { font-size: 11px; color: var(--ink-soft); text-decoration: none; border-bottom: 1.5px dashed var(--ink-faint); width: fit-content; }
+  .info-source-link:hover { color: var(--rust); border-bottom-color: var(--rust); }
+
   /* ── LAYER CONTROL ── */
   .layer-control {
     position: absolute; top: 20px; right: 20px; z-index: 800;
@@ -215,7 +264,7 @@
     padding: 10px 12px; width: 172px; box-shadow: 3px 3px 0 var(--ink);
     max-height: calc(100% - 76px); overflow-y: auto;
   }
-  .layer-control-title { font-size: 10px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .5px; }
+  .layer-control-title { font-size: 10px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .5px; display: inline-flex; align-items: center; gap: 5px; }
   .panel-toggle {
     all: unset; box-sizing: border-box; display: flex; align-items: center;
     justify-content: space-between; width: 100%; margin-bottom: 8px; cursor: default;
@@ -269,7 +318,7 @@
   .legend-row:last-child { margin-bottom: 0; }
   .legend-divider { border: none; border-top: 1.5px solid var(--ink); opacity: .25; margin: 5px 0; }
   .heat-swatch { width: 10px; height: 10px; border-radius: 3px; border: 1.5px solid var(--ink); flex-shrink: 0; }
-  .legend-title { display: none; font-size: 10px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .5px; }
+  .legend-title { display: none; font-size: 10px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .5px; align-items: center; gap: 5px; }
   .legend .panel-toggle { margin-bottom: 0; cursor: default; }
 
   /* ── CUSTOM PIN MARKERS ── */
@@ -287,6 +336,8 @@
     .sidebar { width: 240px; min-width: 240px; }
     .hero-copy { display: none; }
     .hero-left { padding: 12px 16px; }
+    .hero-btn-label { display: none; }
+    .hero-btn { padding: 8px 10px; }
   }
 
   @media (max-width: 680px) {
@@ -300,8 +351,11 @@
     .hero { padding: 8px; gap: 8px; }
     .hero-left { padding: 8px 12px; gap: 10px; border-radius: 14px; box-shadow: 2px 2px 0 var(--ink); }
     .brand-badge { width: 32px; height: 32px; font-size: 16px; border-radius: 10px; }
+    .brand-badge svg { width: 17px; height: 17px; }
     .brand-title { font-size: 15px; }
     .hero-divider { display: none; }
+    .hero-actions { gap: 6px; }
+    .hero-btn { padding: 7px 8px; font-size: 14px; box-shadow: 1.5px 1.5px 0 var(--ink); }
 
     .map-frame { border-radius: 16px; padding: 6px; }
     .map-inner { inset: 6px; border-radius: 11px; }
@@ -333,7 +387,7 @@
        tappable button (solid fill + icon + chevron), not a subtle text label */
     .layer-control .panel-toggle, .legend .panel-toggle { margin-bottom: 6px; cursor: pointer; }
     .panel-toggle .chevron { display: block; transition: transform .15s; }
-    .legend-title { display: block; }
+    .legend-title { display: inline-flex; }
     .layer-control.collapsed .panel-body,
     .legend.collapsed .panel-body { display: none; }
     .layer-control.collapsed .panel-toggle,
@@ -378,11 +432,23 @@
   <div class="hero">
     <div class="hero-left">
       <div class="brand-row">
-        <div class="brand-badge">❄️</div>
+        <div class="brand-badge">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2h-2v4H9V4H7v2h2v2h2v3H8V9H6V7H4v2h2v2H2v2h4v2H4v2h2v-2h2v-2h3v3H9v2H7v2h2v-2h2v4h2v-4h2v2h2v-2h-2v-2h-2v-3h3v2h2v2h2v-2h-2v-2h4v-2h-4V9h2V7h-2v2h-2v2h-3V8h2V6h2V4h-2v2h-2V2z"/></svg>
+        </div>
         <div class="brand-title">Stay Cool San&nbsp;Diego</div>
       </div>
       <span class="hero-divider"></span>
       <p class="hero-copy">Browse libraries and rec centers open as cooling centers and check live NOAA heat risk.</p>
+      <div class="hero-actions">
+        <button class="hero-btn" id="btn-credits">
+          <svg width="16" height="16" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 4c-2.2 0-4 1.8-4 4s1.8 4 4 4s4-1.8 4-4s-1.8-4-4-4zm0 2c1.117 0 2 .883 2 2s-.883 2-2 2s-2-.883-2-2s.883-2 2-2zm-5 7v5h2v5h-2v5h10v-5h-2V13zm2 2h4v10h2v1h-6v-1h2v-9h-2z"/></svg>
+          <span class="hero-btn-label">Credits</span>
+        </button>
+        <button class="hero-btn" id="btn-contact">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" aria-hidden="true"><path d="M11.25 17.25a6 6 0 1 0 12 0a6 6 0 0 0-12 0m6-3v6m-3-3h6"/><path d="M8.25 15.75h-6a1.5 1.5 0 0 1-1.5-1.5v-12a1.5 1.5 0 0 1 1.5-1.5h18a1.5 1.5 0 0 1 1.5 1.5V9"/><path d="m21.411 1.3l-8.144 6.264a3.31 3.31 0 0 1-4.034 0L1.089 1.3"/></svg>
+          <span class="hero-btn-label">Contact</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -420,7 +486,10 @@
       <!-- Layer control -->
       <div class="layer-control collapsed" id="layer-control">
         <button class="panel-toggle" id="layer-control-toggle" aria-expanded="false" aria-controls="layer-control-body">
-          <span class="layer-control-title">🗺️ Map layers</span>
+          <span class="layer-control-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path fill="#ff9f1c" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="m17.298 14.817l5.394 2.344a.512.512 0 0 1 0 .939l-10.486 4.562a.5.5 0 0 1-.41 0l-10.488-4.56a.512.512 0 0 1 0-.939l5.394-2.346"/><path fill="#2ec4b6" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="m17.298 9.187l5.394 2.344a.512.512 0 0 1 0 .939l-10.486 4.562a.5.5 0 0 1-.41 0l-10.488-4.56a.512.512 0 0 1 0-.939l5.394-2.346"/><path fill="#ffbf69" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M12.206 11.397a.52.52 0 0 1-.41 0L1.309 6.837a.512.512 0 0 1 0-.936l10.487-4.563a.5.5 0 0 1 .41 0l10.487 4.563a.512.512 0 0 1 0 .939z"/></svg>
+            Map layers
+          </span>
           <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="panel-body" id="layer-control-body">
@@ -439,6 +508,14 @@
           <div class="layer-row">
             <span class="layer-label"><span class="layer-dot" style="background:#ff9f1c;width:7px;height:7px"></span>Bus stops</span>
             <button class="toggle off" id="tog-stops" aria-label="Toggle bus stops"><span class="toggle-thumb"></span></button>
+          </div>
+          <div class="layer-row">
+            <span class="layer-label"><span class="layer-dot" style="background:#2ec4b6;width:7px;height:7px"></span>Trolley stations</span>
+            <button class="toggle off" id="tog-trolley-stops" aria-label="Toggle trolley stations"><span class="toggle-thumb"></span></button>
+          </div>
+          <div class="layer-row">
+            <span class="layer-label"><span class="layer-dot" style="background:var(--pink);border-color:var(--ink)"></span>Neighborhoods</span>
+            <button class="toggle off" id="tog-neighborhoods" aria-label="Toggle neighborhood boundaries"><span class="toggle-thumb"></span></button>
           </div>
           <hr class="legend-divider">
           <div class="layer-row">
@@ -465,7 +542,10 @@
       <!-- Legend -->
       <div class="legend collapsed" id="legend">
         <button class="panel-toggle" id="legend-toggle" aria-expanded="false" aria-controls="legend-body">
-          <span class="legend-title">🔑 Legend</span>
+          <span class="legend-title">
+            <svg width="13" height="13" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.496 5.086a2.084 2.084 0 0 0-.03.002a2.084 2.084 0 0 0-1.77 1.04L.278 24.173a2.084 2.084 0 0 0 1.805 3.125h20.834a2.084 2.084 0 0 0 1.803-3.125L14.305 6.129a2.084 2.084 0 0 0-1.809-1.043zM40 14.486v7h15v-7H40zm22 0v7h38v-7H62zM2.084 39.672A2.084 2.084 0 0 0 0 41.756v16.666a2.084 2.084 0 0 0 2.084 2.084h20.832A2.084 2.084 0 0 0 25 58.422V41.756a2.084 2.084 0 0 0-2.084-2.084H2.084zM40 47.838v7h27v-7H40zm34 0v7h26v-7H74zM12.5 69.914c-6.879 0-12.5 5.621-12.5 12.5s5.621 12.5 12.5 12.5S25 89.293 25 82.414s-5.621-12.5-12.5-12.5zM40 81.19v7h15v-7H40zm22 0v7h38v-7H62z"/></svg>
+            Legend
+          </span>
           <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="panel-body" id="legend-body">
@@ -475,6 +555,7 @@
           <hr class="legend-divider">
           <div class="legend-row"><span class="layer-line" style="background:#2ec4b6"></span>Trolley</div>
           <div class="legend-row"><span class="layer-line" style="background:#ff9f1c"></span>Bus route</div>
+          <div class="legend-row"><span class="layer-dot" style="background:var(--pink);border-color:var(--ink)"></span>Neighborhood</div>
           <hr class="legend-divider">
           <div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:4px">NOAA HeatRisk</div>
           <div class="legend-row"><span class="heat-swatch" style="background:#02b12b"></span>No concern — enjoy the day safely</div>
@@ -493,8 +574,9 @@
 // ── CONFIG ──────────────────────────────────────────────
 const COOLING_URL   = 'https://services2.arcgis.com/WazTM00Dcxqdhz7V/arcgis/rest/services/SD_Cooling_Centers/FeatureServer/0/query?where=1%3D1&outFields=*&f=geojson'
 const ROUTES_URL    = 'https://geo.sandag.org/server/rest/services/Hosted/Transit_Routes_GTFS/FeatureServer/0/query?where=1%3D1&outFields=route_type,route_color,route_short_name&f=geojson'
-const STOPS_URL     = 'https://geo.sandag.org/server/rest/services/Hosted/Transit_Stops_GTFS/FeatureServer/0/query?where=1%3D1&outFields=stop_name&f=geojson'
+const STOPS_URL     = 'https://geo.sandag.org/server/rest/services/Hosted/Transit_Stops_GTFS/FeatureServer/0/query?where=1%3D1&outFields=stop_name,location_type,parent_station&f=geojson'
 const HEATRISK_WMS  = 'https://mapservices.weather.noaa.gov/experimental/services/NWS_HeatRisk/ImageServer/WMSServer'
+const NEIGHBORHOODS_URL = 'https://services1.arcgis.com/gFqWrLF7jCTW9q6S/arcgis/rest/services/City_of_San_Diego_Neighborhoods/FeatureServer/0/query?where=1%3D1&outFields=name&f=geojson'
 const SD_CENTER     = [32.7157, -117.1611]
 const SD_ZOOM       = 11
 
@@ -549,7 +631,85 @@ function hideMobileModal() {
 }
 mobileModal.querySelector('.mobile-popup-close').addEventListener('click', hideMobileModal)
 mobileModal.addEventListener('click', e => { if (e.target === mobileModal) hideMobileModal() })
-document.addEventListener('keydown', e => { if (e.key === 'Escape') hideMobileModal() })
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideMobileModal(); closeInfoModal() } })
+
+// ── INFO MODAL (Credits / Contact) ───────────────────────
+const infoModal = document.createElement('div')
+infoModal.className = 'info-modal'
+infoModal.innerHTML = `
+  <div class="info-modal-card">
+    <button class="info-modal-close" aria-label="Close">✕</button>
+    <div class="info-modal-body"></div>
+  </div>`
+document.body.appendChild(infoModal)
+const infoModalBody = infoModal.querySelector('.info-modal-body')
+
+function openInfoModal(html) {
+  infoModalBody.innerHTML = html
+  infoModal.classList.add('open')
+}
+function closeInfoModal() {
+  infoModal.classList.remove('open')
+}
+infoModal.querySelector('.info-modal-close').addEventListener('click', closeInfoModal)
+infoModal.addEventListener('click', e => { if (e.target === infoModal) closeInfoModal() })
+
+function contactContent() {
+  return `
+    <div class="popup-hdr popup-hdr-rec">
+      <div class="popup-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" aria-hidden="true"><path d="M11.25 17.25a6 6 0 1 0 12 0a6 6 0 0 0-12 0m6-3v6m-3-3h6"/><path d="M8.25 15.75h-6a1.5 1.5 0 0 1-1.5-1.5v-12a1.5 1.5 0 0 1 1.5-1.5h18a1.5 1.5 0 0 1 1.5 1.5V9"/><path d="m21.411 1.3l-8.144 6.264a3.31 3.31 0 0 1-4.034 0L1.089 1.3"/></svg></div>
+      <div>
+        <div class="popup-title">Get in Touch</div>
+        <div class="popup-subtitle">Have a question, suggestion, or want to collaborate?</div>
+      </div>
+    </div>
+    <div class="info-body">
+      <p class="info-text">Reach out anytime.</p>
+      <div class="info-person">
+        <div class="info-person-name">Hiba Reyes</div>
+        <div class="info-person-role">GIS Analyst · <a href="https://www.bayparkdatasolutions.com/">Bay Park Data Solutions</a></div>
+      </div>
+      <div class="info-actions">
+        <a class="popup-btn-primary" href="mailto:hiba@bayparkds.com">✉ hiba@bayparkds.com</a>
+        <a class="popup-btn-sec" href="https://www.linkedin.com/in/hibareyesvarela" target="_blank" rel="noopener">⟶ linkedin.com/in/hibareyesvarela</a>
+      </div>
+    </div>`
+}
+
+function creditsContent() {
+  const sources = [
+    { label: 'Cooling center locations', org: 'City of San Diego — sandiego.gov/PlacesToCoolDown', url: 'https://www.sandiego.gov/PlacesToCoolDown' },
+    { label: 'Transit routes & stops', org: 'SANDAG — geo.sandag.org', url: 'https://geo.sandag.org' },
+    { label: 'Neighborhood boundaries', org: 'City of San Diego — via ArcGIS Online', url: 'https://www.arcgis.com/home/item.html?id=2c37641bfbc74625ba7893b758e56b11#overview' },
+    { label: 'Daily heat risk forecast', org: 'NOAA / National Weather Service — wpc.ncep.noaa.gov/heatrisk', url: 'https://www.wpc.ncep.noaa.gov/heatrisk' }
+  ]
+  const sourceRows = sources.map(s => `
+    <div class="info-source">
+      <div class="info-source-label">${s.label}</div>
+      <a class="info-source-link" href="${s.url}" target="_blank" rel="noopener">${s.org} ↗</a>
+    </div>`).join('')
+
+  return `
+    <div class="popup-hdr popup-hdr-lib">
+      <div class="popup-icon"><svg width="19" height="19" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16 4c-2.2 0-4 1.8-4 4s1.8 4 4 4s4-1.8 4-4s-1.8-4-4-4zm0 2c1.117 0 2 .883 2 2s-.883 2-2 2s-2-.883-2-2s.883-2 2-2zm-5 7v5h2v5h-2v5h10v-5h-2V13zm2 2h4v10h2v1h-6v-1h2v-9h-2z"/></svg></div>
+      <div>
+        <div class="popup-title">About This App</div>
+        <div class="popup-subtitle">Why we built Stay Cool San Diego</div>
+      </div>
+    </div>
+    <div class="info-body">
+      <p class="info-text">This tool was built to help San Diego residents quickly find free cooling centers during heat events. Libraries, recreation centers, and other city-operated locations across all nine council districts.</p>
+      <div class="info-divider-label">Data Sources</div>
+      ${sourceRows}
+      <div class="info-source">
+        <div class="info-source-label">Map tiles</div>
+        <div class="info-source-link" style="cursor:default;border-bottom:none">© CartoDB · © OpenStreetMap contributors</div>
+      </div>
+    </div>`
+}
+
+document.getElementById('btn-credits').addEventListener('click', () => openInfoModal(creditsContent()))
+document.getElementById('btn-contact').addEventListener('click', () => openInfoModal(contactContent()))
 
 // ── STATE ───────────────────────────────────────────────
 let allFeatures = []
@@ -557,8 +717,43 @@ let currentFilter = 'all'
 let currentSearch = ''
 let selectedId = null
 let markersGroup = L.layerGroup().addTo(map)
-let busLayer, trolleyLayer, stopsLayer
-const layerVisible = { centers: true, bus: true, trolley: true, stops: false, heatrisk: true }
+let busLayer, trolleyLayer, stopsLayer, trolleyStopsLayer, neighborhoodsLayer
+let neighborhoodsData = null
+const layerVisible = { centers: true, bus: true, trolley: true, stops: false, trolleyStops: false, neighborhoods: false, heatrisk: true }
+
+// ── POINT-IN-POLYGON (ray casting; supports polygon holes) ──
+function pointInRing(x, y, ring) {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1]
+    const xj = ring[j][0], yj = ring[j][1]
+    const intersects = (yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi
+    if (intersects) inside = !inside
+  }
+  return inside
+}
+function pointInPolygonGeometry(lng, lat, geometry) {
+  const polys = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.type === 'MultiPolygon' ? geometry.coordinates : []
+  for (const rings of polys) {
+    if (!pointInRing(lng, lat, rings[0])) continue // outside outer ring
+    let inHole = false
+    for (let i = 1; i < rings.length; i++) {
+      if (pointInRing(lng, lat, rings[i])) { inHole = true; break }
+    }
+    if (!inHole) return true
+  }
+  return false
+}
+// One-time spatial join: tag each cooling center with the neighborhood it physically falls inside
+function assignNeighborhoods() {
+  if (!neighborhoodsData) return
+  allFeatures.forEach(f => {
+    const coords = f.geometry?.coordinates
+    if (!coords) return
+    const hood = neighborhoodsData.features.find(h => pointInPolygonGeometry(coords[0], coords[1], h.geometry))
+    f._hood = hood?.properties?.name || ''
+  })
+}
 
 // On narrow screens, swap the embedded Leaflet popup for the full-screen modal the instant it opens
 map.on('popupopen', e => {
@@ -718,7 +913,8 @@ function getFiltered() {
     const matchSearch = !search ||
       (p.facility_name || '').toLowerCase().includes(search) ||
       (p.neighborhood  || '').toLowerCase().includes(search) ||
-      (p.address       || '').toLowerCase().includes(search)
+      (p.address       || '').toLowerCase().includes(search) ||
+      (f._hood         || '').toLowerCase().includes(search)
     const matchFilter =
       currentFilter === 'all'                   ? true :
       currentFilter === 'open'                  ? isOpenNow(p) :
@@ -774,14 +970,18 @@ function wireToggle(btnId, onFn, offFn, key) {
   })
 }
 
-// ── BUS STOPS VISIBILITY BY ZOOM ────────────────────────
-function updateStopsVisibility() {
-  if (!stopsLayer) return
-  if (map.getZoom() >= 14 && layerVisible.stops) {
-    if (!map.hasLayer(stopsLayer)) map.addLayer(stopsLayer)
+// ── TRANSIT STOPS VISIBILITY BY ZOOM ────────────────────
+function toggleAtZoom(layer, visible) {
+  if (!layer) return
+  if (map.getZoom() >= 14 && visible) {
+    if (!map.hasLayer(layer)) map.addLayer(layer)
   } else {
-    if (map.hasLayer(stopsLayer)) map.removeLayer(stopsLayer)
+    if (map.hasLayer(layer)) map.removeLayer(layer)
   }
+}
+function updateStopsVisibility() {
+  toggleAtZoom(stopsLayer, layerVisible.stops)
+  toggleAtZoom(trolleyStopsLayer, layerVisible.trolleyStops)
 }
 map.on('zoomend', updateStopsVisibility)
 
@@ -837,10 +1037,19 @@ async function init() {
     )
   })
 
-  // Bus stops — CORS may block; only show at zoom 14+
+  // Transit stops — CORS may block; only show at zoom 14+. The GTFS stops feed has no route-type
+  // field, but stations/platforms that belong to a parent station (location_type '1', or any stop
+  // with a parent_station set) are trolley/rail stops — everything else is a plain bus stop.
   fetchGeoJSON(STOPS_URL).then(data => {
-    if (!data) { console.info('Bus stops unavailable (CORS) — skipping'); return }
-    stopsLayer = L.geoJSON(data, {
+    if (!data) { console.info('Transit stops unavailable (CORS) — skipping'); return }
+    const isTrolleyStop = f => {
+      const p = f.properties || {}
+      return p.location_type === '1' || !!(p.parent_station && p.parent_station.trim())
+    }
+    const busStops     = { type: 'FeatureCollection', features: data.features.filter(f => !isTrolleyStop(f)) }
+    const trolleyStops = { type: 'FeatureCollection', features: data.features.filter(isTrolleyStop) }
+
+    stopsLayer = L.geoJSON(busStops, {
       pointToLayer: (f, latlng) => L.circleMarker(latlng, {
         radius: 4, fillColor: '#ff9f1c', color: '#fff', weight: 1.5, fillOpacity: .95
       }),
@@ -848,11 +1057,46 @@ async function init() {
         if (f.properties?.stop_name) layer.bindTooltip(f.properties.stop_name, { direction: 'top' })
       }
     })
+    trolleyStopsLayer = L.geoJSON(trolleyStops, {
+      pointToLayer: (f, latlng) => L.circleMarker(latlng, {
+        radius: 5, fillColor: '#2ec4b6', color: '#fff', weight: 1.5, fillOpacity: .95
+      }),
+      onEachFeature: (f, layer) => {
+        if (f.properties?.stop_name) layer.bindTooltip(f.properties.stop_name, { direction: 'top' })
+      }
+    })
+
     wireToggle('tog-stops',
       () => updateStopsVisibility(),
       () => { if (stopsLayer && map.hasLayer(stopsLayer)) map.removeLayer(stopsLayer) },
       'stops'
     )
+    wireToggle('tog-trolley-stops',
+      () => updateStopsVisibility(),
+      () => { if (trolleyStopsLayer && map.hasLayer(trolleyStopsLayer)) map.removeLayer(trolleyStopsLayer) },
+      'trolleyStops'
+    )
+  })
+
+  // Neighborhood boundaries — used both as an optional overlay and to let search match every
+  // cooling center that falls inside a searched neighborhood, not just exact name/address hits
+  fetchGeoJSON(NEIGHBORHOODS_URL).then(data => {
+    if (!data) { console.info('Neighborhood boundaries unavailable (CORS) — skipping'); return }
+    neighborhoodsData = data
+    neighborhoodsLayer = L.geoJSON(data, {
+      style: { color: '#241b14', weight: 1.5, opacity: .5, fillColor: '#cbf3f0', fillOpacity: .12, dashArray: '4 3' },
+      onEachFeature: (f, layer) => {
+        const name = f.properties?.name
+        if (name) layer.bindTooltip(name, { direction: 'center' })
+      }
+    })
+    wireToggle('tog-neighborhoods',
+      () => map.addLayer(neighborhoodsLayer),
+      () => map.removeLayer(neighborhoodsLayer),
+      'neighborhoods'
+    )
+    assignNeighborhoods()
+    renderList()
   })
 
   // Cooling centers toggle (always available)
